@@ -13,6 +13,7 @@ You can edit this file as you like.
     , "either"
     , "exceptions"
     , "foldable-traversable"
+    , "indexed-monad"
     , "identity"
     , "lazy"
     , "maybe"
@@ -26,5 +27,5 @@ You can edit this file as you like.
 , packages =
     ./packages.dhall
 , sources =
-    [ "src/**/*.purs", "test/**/*.purs" ]
+    [ "src/**/*.purs" ]
 }
