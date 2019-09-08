@@ -1,7 +1,9 @@
 -- | This module defines the `MonadWriter` type class and its instances.
 
-module Control.Monad.Writer.Class where
+module Control.Monad.Indexed.Writer.Class where
 
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed (class IxMonad, ipure)
 import Prelude
 
 import Data.Tuple (Tuple(..))
@@ -16,8 +18,8 @@ import Data.Tuple (Tuple(..))
 -- | Law:
 -- |
 -- | - `do { tell x ; tell y } = tell (x <> y)`
-class Monad m <= MonadTell w m | m -> w where
-  tell :: w -> m Unit
+class IxMonad m <= IxMonadTell w m | m -> w where
+  itell :: forall x. w -> m x x Unit
 
 -- | An extension of the `MonadTell` class that introduces some operations on
 -- | the accumulator:
@@ -33,19 +35,19 @@ class Monad m <= MonadTell w m | m -> w where
 -- | - `do { tell x ; tell y } = tell (x <> y)`
 -- | - `listen (pure a) = pure (Tuple a mempty)`
 -- | - `listen (writer a x) = tell x $> Tuple a x`
-class MonadTell w m <= MonadWriter w m | m -> w where
-  listen :: forall a. m a -> m (Tuple a w)
-  pass :: forall a. m (Tuple a (w -> w)) -> m a
+class IxMonadTell w m <= IxMonadWriter w m | m -> w where
+  ilisten :: forall x a. m x x a -> m x x (Tuple a w)
+  ipass :: forall x a. m x x (Tuple a (w -> w)) -> m x x a
 
 -- | Projects a value from modifications made to the accumulator during an
 -- | action.
-listens :: forall w m a b. MonadWriter w m => (w -> b) -> m a -> m (Tuple a b)
-listens f m = do
-  Tuple a w <- listen m
-  pure $ Tuple a (f w)
+ilistens :: forall w m x a b. IxMonadWriter w m => (w -> b) -> m x x a -> m x x (Tuple a b)
+ilistens f m = Ix.do
+  Tuple a w <- ilisten m
+  ipure (Tuple a (f w))
 
 -- | Modify the final accumulator value by applying a function.
-censor :: forall w m a. MonadWriter w m => (w -> w) -> m a -> m a
-censor f m = pass do
+icensor :: forall w m x a. IxMonadWriter w m => (w -> w) -> m x x a -> m x x a
+icensor f m = ipass Ix.do
   a <- m
-  pure $ Tuple a f
+  ipure (Tuple a f)
