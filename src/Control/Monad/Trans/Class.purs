@@ -1,8 +1,9 @@
 -- | This module defines the `MonadTrans` type class of _monad transformers_.
 
-module Control.Monad.Trans.Class where
+module Control.Monad.Indexed.Trans.Class where
 
 import Prelude (class Monad)
+import Control.Monad.Indexed (class IxMonad, imap)
 
 -- | The `MonadTrans` type class represents _monad transformers_.
 -- |
@@ -19,5 +20,5 @@ import Prelude (class Monad)
 -- |
 -- | - `lift (pure a) = pure a`
 -- | - `lift (do { x <- m ; y }) = do { x <- lift m ; lift y }`
-class MonadTrans t where
-  lift :: forall m a. Monad m => m a -> t m a
+class IxMonadTrans t where
+  ilift :: forall m x a. IxMonad m => m x x a -> t m x x a

@@ -1,7 +1,9 @@
 -- | This module defines the `MonadReader` type class and its instances.
 
-module Control.Monad.Reader.Class where
+module Control.Monad.Indexed.Reader.Class where
 
+import Data.Indexed (Indexed(..))
+import Control.Monad.Indexed (class IxMonad, imap)
 import Prelude
 
 -- | The `MonadAsk` type class represents those monads which support a global
@@ -13,15 +15,15 @@ import Prelude
 -- | Law:
 -- |
 -- | - `do { ask ; ask } = ask`
-class Monad m <= MonadAsk r m | m -> r where
-  ask :: m r
+class IxMonad m <= IxMonadAsk r m | m -> r where
+  iask :: forall x. m x x r
 
-instance monadAskFun :: MonadAsk r ((->) r) where
-  ask = identity
+instance ixMonadAskFun :: IxMonadAsk r (Indexed ((->) r)) where
+  iask = Indexed identity
 
 -- | Projects a value from the global context in a `MonadAsk`.
-asks :: forall r m a. MonadAsk r m => (r -> a) -> m a
-asks f = f <$> ask
+iasks :: forall r m x a. IxMonadAsk r m => (r -> a) -> m x x a
+iasks f = imap f iask
 
 -- | An extension of the `MonadAsk` class that introduces a function `local f x`
 -- | that allows the value of the local context to be modified for the duration
@@ -35,8 +37,8 @@ asks f = f <$> ask
 -- | - `local f ask = f <$> ask`
 -- | - `local _ (pure a) = pure a`
 -- | - `local f (do { a <- x ; y }) = do { a <- local f x ; local f y }`
-class MonadAsk r m <= MonadReader r m | m -> r where
-  local :: forall a. (r -> r) -> m a -> m a
+class IxMonadAsk r m <= IxMonadReader r m | m -> r where
+  ilocal :: forall x a. (r -> r) -> m x x a -> m x x a
 
-instance monadReaderFun :: MonadReader r ((->) r) where
-  local = (>>>)
+instance ixMonadReaderFun :: IxMonadReader r (Indexed ((->) r)) where
+  ilocal f (Indexed m) = Indexed \a -> m (f a)
