@@ -13,13 +13,13 @@ import Prelude
 -- import Control.Apply (lift2)
 import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Indexed (class IxFunctor, class IxApply, class IxApplicative, class IxBind, class IxMonad, imap, iapply, ipure, ibind)
--- import Control.Monad.Cont.Class (class MonadCont, callCC)
--- import Control.Monad.Error.Class (class MonadThrow, class MonadError, catchError, throwError)
+import Control.Monad.Indexed.Cont.Class (class IxMonadCont, icallCC)
+import Control.Monad.Indexed.Error.Class (class IxMonadThrow, class IxMonadError, icatchError, ithrowError)
 import Control.Monad.Indexed.Reader.Class (class IxMonadAsk, class IxMonadReader, iask, iasks, ilocal)
 -- import Control.Monad.Rec.Class (class MonadRec, tailRecM)
 import Control.Monad.Indexed.State.Class (class IxMonadState, istate)
 import Control.Monad.Indexed.Trans.Class (class IxMonadTrans, ilift)
--- import Control.Monad.Writer.Class (class MonadWriter, class MonadTell, pass, listen, tell)
+import Control.Monad.Indexed.Writer.Class (class IxMonadTell, class IxMonadWriter, ilisten, ipass, itell)
 -- import Control.MonadPlus (class MonadPlus)
 -- import Control.MonadZero (class MonadZero)
 -- import Control.Plus (class Plus, empty)
@@ -49,13 +49,13 @@ withIxReaderT f (IxReaderT m) = IxReaderT (m <<< f)
 
 derive instance newtypeIxReaderT :: Newtype (IxReaderT r m x y a) _
 
-instance functorIxReaderT :: IxFunctor m => IxFunctor (IxReaderT r m) where
+instance ixFunctorIxReaderT :: IxFunctor m => IxFunctor (IxReaderT r m) where
   imap = mapIxReaderT <<< imap
 
-instance applyIxReaderT :: IxApply m => IxApply (IxReaderT r m) where
+instance ixApplyIxReaderT :: IxApply m => IxApply (IxReaderT r m) where
   iapply (IxReaderT f) (IxReaderT v) = IxReaderT \r -> iapply (f r) (v r)
 
-instance applicativeIxReaderT :: IxApplicative m => IxApplicative (IxReaderT r m) where
+instance ixApplicativeIxReaderT :: IxApplicative m => IxApplicative (IxReaderT r m) where
   ipure = IxReaderT <<< const <<< ipure
 
 -- instance altIxReaderT :: Alt m => Alt (IxReaderT r m) where
@@ -66,60 +66,60 @@ instance applicativeIxReaderT :: IxApplicative m => IxApplicative (IxReaderT r m
 --
 -- instance alternativeIxReaderT :: Alternative m => Alternative (IxReaderT r m)
 
-instance bindIxReaderT :: IxBind m => IxBind (IxReaderT r m) where
+instance ixBindIxReaderT :: IxBind m => IxBind (IxReaderT r m) where
   ibind (IxReaderT m) k = IxReaderT \r ->
     ibind (m r) \a -> case k a of IxReaderT f -> f r
 
-instance monadIxReaderT :: IxMonad m => IxMonad (IxReaderT r m)
+instance ixMonadIxReaderT :: IxMonad m => IxMonad (IxReaderT r m)
 
--- instance monadZeroIxReaderT :: MonadZero m => MonadZero (IxReaderT r m)
+-- instance ixMonadZeroIxReaderT :: MonadZero m => MonadZero (IxReaderT r m)
 --
 -- instance semigroupIxReaderT :: (Apply m, Semigroup a) => Semigroup (IxReaderT s m a) where
 --   append = lift2 (<>)
 --
--- instance monoidIxReaderT :: (Applicative m, Monoid a) => Monoid (IxReaderT s m a) where
+-- instance ixMonoidIxReaderT :: (Applicative m, Monoid a) => Monoid (IxReaderT s m a) where
 --   mempty = pure mempty
 --
--- instance monadPlusIxReaderT :: MonadPlus m => MonadPlus (IxReaderT r m)
+-- instance ixMonadPlusIxReaderT :: MonadPlus m => MonadPlus (IxReaderT r m)
 
-instance monadTransIxReaderT :: IxMonadTrans (IxReaderT r) where
+instance ixMonadTransIxReaderT :: IxMonadTrans (IxReaderT r) where
   ilift = IxReaderT <<< const
 
--- instance monadEffectReader :: MonadEffect m => MonadEffect (IxReaderT r m) where
+-- instance ixMonadEffectReader :: MonadEffect m => MonadEffect (IxReaderT r m) where
 --   liftEffect = lift <<< liftEffect
 --
--- instance monadContIxReaderT :: MonadCont m => MonadCont (IxReaderT r m) where
---   callCC f = IxReaderT \r -> callCC \c ->
---     case f (IxReaderT <<< const <<< c) of IxReaderT f' -> f' r
+instance ixMonadContIxReaderT :: IxMonadCont m => IxMonadCont (IxReaderT r m) where
+  icallCC f = IxReaderT \r -> icallCC \c ->
+    case f (IxReaderT <<< const <<< c) of IxReaderT f' -> f' r
 --
--- instance monadThrowIxReaderT :: MonadThrow e m => MonadThrow e (IxReaderT r m) where
---   throwError = lift <<< throwError
---
--- instance monadErrorIxReaderT :: MonadError e m => MonadError e (IxReaderT r m) where
---   catchError (IxReaderT m) h =
---     IxReaderT \r -> catchError (m r) (\e -> case h e of IxReaderT f -> f r)
+instance ixMonadThrowIxReaderT :: IxMonadThrow e m => IxMonadThrow e (IxReaderT r m) where
+  ithrowError = ilift <<< ithrowError
 
-instance monadAskIxReaderT :: IxMonad m => IxMonadAsk r (IxReaderT r m) where
+instance ixMonadErrorIxReaderT :: IxMonadError e m => IxMonadError e (IxReaderT r m) where
+  icatchError (IxReaderT m) h =
+    IxReaderT \r -> icatchError (m r) (\e -> case h e of IxReaderT f -> f r)
+
+instance ixMonadAskIxReaderT :: IxMonad m => IxMonadAsk r (IxReaderT r m) where
   iask = IxReaderT ipure
 
-instance monadReaderIxReaderT :: IxMonad m => IxMonadReader r (IxReaderT r m) where
+instance ixMonadReaderIxReaderT :: IxMonad m => IxMonadReader r (IxReaderT r m) where
   ilocal = withIxReaderT
 
-instance monadStateIxReaderT :: IxMonadState s m => IxMonadState s (IxReaderT r m) where
+instance ixMonadStateIxReaderT :: IxMonadState s m => IxMonadState s (IxReaderT r m) where
   istate = ilift <<< istate
 
--- instance monadTellIxReaderT :: MonadTell w m => MonadTell w (IxReaderT r m) where
---   tell = lift <<< tell
---
--- instance monadWriterIxReaderT :: MonadWriter w m => MonadWriter w (IxReaderT r m) where
---   listen = mapIxReaderT listen
---   pass = mapIxReaderT pass
+instance ixMonadTellIxReaderT :: IxMonadTell w m => IxMonadTell w (IxReaderT r m) where
+  itell = ilift <<< itell
+
+instance ixMonadWriterIxReaderT :: IxMonadWriter w m => IxMonadWriter w (IxReaderT r m) where
+  ilisten = mapIxReaderT ilisten
+  ipass = mapIxReaderT ipass
 --
 -- instance distributiveIxReaderT :: Distributive g => Distributive (IxReaderT e g) where
 --   distribute a = IxReaderT \e -> collect (\r -> case r of IxReaderT r' -> r' e) a
 --   collect f = distribute <<< map f
 --
--- instance monadRecIxReaderT :: MonadRec m => MonadRec (IxReaderT r m) where
+-- instance ixMonadRecIxReaderT :: MonadRec m => MonadRec (IxReaderT r m) where
 --   tailRecM k a = IxReaderT \r -> tailRecM (k' r) a
 --     where
 --     k' r a' = case k a' of IxReaderT f -> pure =<< f r

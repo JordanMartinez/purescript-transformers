@@ -12,8 +12,8 @@ import Prelude
 -- import Control.Alternative (class Alternative)
 import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Indexed (class IxApplicative, class IxApply, class IxBind, class IxFunctor, class IxMonad, iapply, ibind, imap, ipure)
--- import Control.Monad.Cont.Class (class MonadCont, callCC)
--- import Control.Monad.Error.Class (class MonadThrow, class MonadError, catchError, throwError)
+import Control.Monad.Indexed.Cont.Class (class IxMonadCont, icallCC)
+import Control.Monad.Indexed.Error.Class (class IxMonadThrow, class IxMonadError, icatchError, ithrowError)
 import Control.Monad.Indexed.Reader.Class (class IxMonadAsk, class IxMonadReader, iask, ilocal)
 -- import Control.Monad.Rec.Class (class MonadRec, tailRecM, Step(..))
 import Control.Monad.Indexed.State.Class (class IxMonadState, istate)
@@ -48,15 +48,15 @@ mapWriterT f (WriterT m) = WriterT (f m)
 
 derive instance newtypeWriterT :: Newtype (WriterT w m x y a) _
 
-instance functorWriterT :: IxFunctor m => IxFunctor (WriterT w m) where
+instance ixFunctorWriterT :: IxFunctor m => IxFunctor (WriterT w m) where
   imap f = mapWriterT (imap \(Tuple a w) -> Tuple (f a) w)
 
-instance applyWriterT :: (Semigroup w, IxApply m) => IxApply (WriterT w m) where
+instance ixApplyWriterT :: (Semigroup w, IxApply m) => IxApply (WriterT w m) where
   iapply (WriterT f) (WriterT v) = WriterT
     let k (Tuple a w) (Tuple b w') = Tuple (a b) (w <> w')
     in k `imap` f `iapply` v
 
-instance applicativeWriterT :: (Monoid w, IxApplicative m) => IxApplicative (WriterT w m) where
+instance ixApplicativeWriterT :: (Monoid w, IxApplicative m) => IxApplicative (WriterT w m) where
   ipure a = WriterT (ipure (Tuple a mempty))
 
 -- instance altWriterT :: Alt m => Alt (WriterT w m) where
@@ -67,16 +67,16 @@ instance applicativeWriterT :: (Monoid w, IxApplicative m) => IxApplicative (Wri
 --
 -- instance alternativeWriterT :: (Monoid w, Alternative m) => Alternative (WriterT w m)
 
-instance bindWriterT :: (Semigroup w, IxBind m) => IxBind (WriterT w m) where
+instance ixBindWriterT :: (Semigroup w, IxBind m) => IxBind (WriterT w m) where
   ibind (WriterT m) k = WriterT $
     ibind m \(Tuple a w) ->
       case k a of
         WriterT wt ->
           imap (\(Tuple b w') -> Tuple b (w <> w')) wt
 
-instance monadWriterT :: (Monoid w, IxMonad m) => IxMonad (WriterT w m)
+instance ixMonadWriterT :: (Monoid w, IxMonad m) => IxMonad (WriterT w m)
 
--- instance monadRecWriterT :: (Monoid w, MonadRec m) => MonadRec (WriterT w m) where
+-- instance ixMonadRecWriterT :: (Monoid w, MonadRec m) => MonadRec (WriterT w m) where
 --   tailRecM f a = WriterT $ tailRecM f' (Tuple a mempty)
 --     where
 --     f' (Tuple a' w) =
@@ -86,41 +86,41 @@ instance monadWriterT :: (Monoid w, IxMonad m) => IxMonad (WriterT w m)
 --             Loop x -> Loop (Tuple x (w <> w1))
 --             Done y -> Done (Tuple y (w <> w1))
 --
--- instance monadZeroWriterT :: (Monoid w, MonadZero m) => MonadZero (WriterT w m)
+-- instance ixMonadZeroWriterT :: (Monoid w, MonadZero m) => MonadZero (WriterT w m)
 --
--- instance monadPlusWriterT :: (Monoid w, MonadPlus m) => MonadPlus (WriterT w m)
+-- instance ixMonadPlusWriterT :: (Monoid w, MonadPlus m) => MonadPlus (WriterT w m)
 
-instance monadTransWriterT :: Monoid w => IxMonadTrans (WriterT w) where
+instance ixMonadTransWriterT :: Monoid w => IxMonadTrans (WriterT w) where
   ilift m = WriterT Ix.do
     a <- m
     ipure (Tuple a mempty)
 
--- instance monadEffectWriter :: (Monoid w, MonadEffect m) => MonadEffect (WriterT w m) where
+-- instance ixMonadEffectWriter :: (Monoid w, MonadEffect m) => MonadEffect (WriterT w m) where
 --   liftEffect = lift <<< liftEffect
 --
--- instance monadContWriterT :: (Monoid w, MonadCont m) => MonadCont (WriterT w m) where
---   callCC f = WriterT $ callCC \c ->
---     case f (\a -> WriterT $ c (Tuple a mempty)) of WriterT b -> b
+instance ixMonadContWriterT :: (Monoid w, IxMonadCont m) => IxMonadCont (WriterT w m) where
+  icallCC f = WriterT $ icallCC \c ->
+    case f (\a -> WriterT $ c (Tuple a mempty)) of WriterT b -> b
 --
--- instance monadThrowWriterT :: (Monoid w, MonadThrow e m) => MonadThrow e (WriterT w m) where
---   throwError e = lift (throwError e)
---
--- instance monadErrorWriterT :: (Monoid w, MonadError e m) => MonadError e (WriterT w m) where
---   catchError (WriterT m) h = WriterT $ catchError m (\e -> case h e of WriterT a -> a)
+instance ixMonadThrowWriterT :: (Monoid w, IxMonadThrow e m) => IxMonadThrow e (WriterT w m) where
+  ithrowError = ilift <<< ithrowError
 
-instance monadAskWriterT :: (Monoid w, IxMonadAsk r m) => IxMonadAsk r (WriterT w m) where
+instance ixMonadErrorWriterT :: (Monoid w, IxMonadError e m) => IxMonadError e (WriterT w m) where
+  icatchError (WriterT m) h = WriterT $ icatchError m (\e -> case h e of WriterT a -> a)
+
+instance ixMonadAskWriterT :: (Monoid w, IxMonadAsk r m) => IxMonadAsk r (WriterT w m) where
   iask = ilift iask
 
-instance monadReaderWriterT :: (Monoid w, IxMonadReader r m) => IxMonadReader r (WriterT w m) where
+instance ixMonadReaderWriterT :: (Monoid w, IxMonadReader r m) => IxMonadReader r (WriterT w m) where
   ilocal f = mapWriterT (ilocal f)
 
-instance monadStateWriterT :: (Monoid w, IxMonadState s m) => IxMonadState s (WriterT w m) where
+instance ixMonadStateWriterT :: (Monoid w, IxMonadState s m) => IxMonadState s (WriterT w m) where
   istate f = ilift (istate f)
 
-instance monadTellWriterT :: (Monoid w, IxMonad m) => IxMonadTell w (WriterT w m) where
+instance ixMonadTellWriterT :: (Monoid w, IxMonad m) => IxMonadTell w (WriterT w m) where
   itell = WriterT <<< ipure <<< Tuple unit
 
-instance monadWriterWriterT :: (Monoid w, IxMonad m) => IxMonadWriter w (WriterT w m) where
+instance ixMonadWriterWriterT :: (Monoid w, IxMonad m) => IxMonadWriter w (WriterT w m) where
   ilisten (WriterT m) = WriterT Ix.do
     Tuple a w <- m
     ipure (Tuple (Tuple a w) w)

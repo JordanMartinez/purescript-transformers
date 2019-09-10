@@ -12,14 +12,14 @@ import Prelude
 -- import Control.Alternative (class Alternative)
 -- import Control.Lazy (class Lazy)
 import Control.Monad.Indexed.Qualified as Ix
-import Control.Monad.Indexed (class IxFunctor, class IxApply, class IxApplicative, class IxBind, class IxMonad, imap, iapply, iap, ipure, ibind)
--- import Control.Monad.Cont.Class (class MonadCont, callCC)
--- import Control.Monad.Error.Class (class MonadThrow, class MonadError, catchError, throwError)
+import Control.Monad.Indexed (class IxApplicative, class IxApply, class IxBind, class IxFunctor, class IxMonad, iap, ibind, imap, ipure)
+import Control.Monad.Indexed.Cont.Class (class IxMonadCont, icallCC)
+import Control.Monad.Indexed.Error.Class (class IxMonadThrow, class IxMonadError, icatchError, ithrowError)
 import Control.Monad.Indexed.Reader.Class (class IxMonadAsk, class IxMonadReader, iask, ilocal)
 -- import Control.Monad.Rec.Class (class MonadRec, tailRecM, Step(..))
 import Control.Monad.Indexed.State.Class (class IxMonadState, iget, igets, imodify, imodify_, iput, istate)
 import Control.Monad.Indexed.Trans.Class (class IxMonadTrans, ilift)
--- import Control.Monad.Writer.Class (class MonadWriter, class MonadTell, pass, listen, tell)
+import Control.Monad.Indexed.Writer.Class (class IxMonadTell, itell, class IxMonadWriter, ilisten, ipass)
 -- import Control.MonadPlus (class MonadPlus)
 -- import Control.MonadZero (class MonadZero)
 -- import Control.Plus (class Plus, empty)
@@ -57,13 +57,13 @@ withIxStateT f (IxStateT s) = IxStateT (s <<< f)
 
 derive instance newtypeIxStateT :: Newtype (IxStateT s m x y a) _
 
-instance functorIxStateT :: IxFunctor m => IxFunctor (IxStateT s m) where
+instance ixFunctorIxStateT :: IxFunctor m => IxFunctor (IxStateT s m) where
   imap f (IxStateT a) = IxStateT (\s -> imap (\(Tuple b s') -> Tuple (f b) s') (a s))
 
-instance applyIxStateT :: IxMonad m => IxApply (IxStateT s m) where
+instance ixApplyIxStateT :: IxMonad m => IxApply (IxStateT s m) where
   iapply = iap
 
-instance applicativeIxStateT :: IxMonad m => IxApplicative (IxStateT s m) where
+instance ixApplicativeIxStateT :: IxMonad m => IxApplicative (IxStateT s m) where
   ipure a = IxStateT \s -> ipure $ Tuple a s
 
 -- instance altIxStateT :: (Monad m, Alt m) => Alt (IxStateT s m) where
@@ -74,13 +74,13 @@ instance applicativeIxStateT :: IxMonad m => IxApplicative (IxStateT s m) where
 --
 -- instance alternativeIxStateT :: (Monad m, Alternative m) => Alternative (IxStateT s m)
 
-instance bindIxStateT :: IxMonad m => IxBind (IxStateT s m) where
+instance ixBindIxStateT :: IxMonad m => IxBind (IxStateT s m) where
   ibind (IxStateT x) f = IxStateT \s ->
     ibind (x s) \(Tuple v s') -> case f v of IxStateT st -> st s'
 
-instance monadIxStateT :: IxMonad m => IxMonad (IxStateT s m)
+instance ixMonadIxStateT :: IxMonad m => IxMonad (IxStateT s m)
 
--- instance monadRecIxStateT :: MonadRec m => MonadRec (IxStateT s m) where
+-- instance ixMonadRecIxStateT :: MonadRec m => MonadRec (IxStateT s m) where
 --   tailRecM f a = IxStateT \s -> tailRecM f' (Tuple a s)
 --     where
 --     f' (Tuple a' s) =
@@ -90,11 +90,11 @@ instance monadIxStateT :: IxMonad m => IxMonad (IxStateT s m)
 --             Loop x -> Loop (Tuple x s1)
 --             Done y -> Done (Tuple y s1)
 --
--- instance monadZeroIxStateT :: MonadZero m => MonadZero (IxStateT s m)
+-- instance ixMonadZeroIxStateT :: MonadZero m => MonadZero (IxStateT s m)
 --
--- instance monadPlusIxStateT :: MonadPlus m => MonadPlus (IxStateT s m)
+-- instance ixMonadPlusIxStateT :: MonadPlus m => MonadPlus (IxStateT s m)
 
-instance monadTransIxStateT :: IxMonadTrans (IxStateT s) where
+instance ixMonadTransIxStateT :: IxMonadTrans (IxStateT s) where
   ilift m = IxStateT \s -> Ix.do
     x <- m
     ipure (Tuple x s)
@@ -102,40 +102,40 @@ instance monadTransIxStateT :: IxMonadTrans (IxStateT s) where
 -- instance lazyIxStateT :: Lazy (IxStateT s m a) where
 --   defer f = IxStateT \s -> case f unit of IxStateT f' -> f' s
 --
--- instance monadEffectState :: MonadEffect m => MonadEffect (IxStateT s m) where
+-- instance ixMonadEffectState :: MonadEffect m => MonadEffect (IxStateT s m) where
 --   liftEffect = lift <<< liftEffect
 --
--- instance monadContIxStateT :: MonadCont m => MonadCont (IxStateT s m) where
---   callCC f = IxStateT \s -> callCC \c ->
---     case f (\a -> IxStateT \s' -> c (Tuple a s')) of IxStateT f' -> f' s
+instance ixMonadContIxStateT :: IxMonadCont m => IxMonadCont (IxStateT s m) where
+  icallCC f = IxStateT \s -> icallCC \c ->
+    case f (\a -> IxStateT \s' -> c (Tuple a s')) of IxStateT f' -> f' s
 --
--- instance monadThrowIxStateT :: MonadThrow e m => MonadThrow e (IxStateT s m) where
---   throwError e = lift (throwError e)
---
--- instance monadErrorIxStateT :: MonadError e m => MonadError e (IxStateT s m) where
---   catchError (IxStateT m) h =
---     IxStateT \s -> catchError (m s) (\e -> case h e of IxStateT f -> f s)
+instance ixMonadThrowIxStateT :: IxMonadThrow e m => IxMonadThrow e (IxStateT s m) where
+  ithrowError = ilift <<< ithrowError
 
-instance monadAskIxStateT :: IxMonadAsk r m => IxMonadAsk r (IxStateT s m) where
+instance ixMonadErrorIxStateT :: IxMonadError e m => IxMonadError e (IxStateT s m) where
+  icatchError (IxStateT m) h =
+    IxStateT \s -> icatchError (m s) (\e -> case h e of IxStateT f -> f s)
+
+instance ixMonadAskIxStateT :: IxMonadAsk r m => IxMonadAsk r (IxStateT s m) where
   iask = ilift iask
 
-instance monadReaderIxStateT :: IxMonadReader r m => IxMonadReader r (IxStateT s m) where
+instance ixMonadReaderIxStateT :: IxMonadReader r m => IxMonadReader r (IxStateT s m) where
   ilocal = mapIxStateT <<< ilocal
 
-instance monadStateIxStateT :: IxMonad m => IxMonadState s (IxStateT s m) where
+instance ixMonadStateIxStateT :: IxMonad m => IxMonadState s (IxStateT s m) where
   istate f = IxStateT (ipure <<< f)
 
--- instance monadTellIxStateT :: MonadTell w m => MonadTell w (IxStateT s m) where
---   tell = lift <<< tell
---
--- instance monadWriterIxStateT :: MonadWriter w m => MonadWriter w (IxStateT s m) where
---   listen m = IxStateT \s ->
---     case m of
---       IxStateT m' -> do
---         Tuple (Tuple a s') w <- listen (m' s)
---         pure $ Tuple (Tuple a w) s'
---   pass m = IxStateT \s -> pass
---     case m of
---       IxStateT m' -> do
---         Tuple (Tuple a f) s' <- m' s
---         pure $ Tuple (Tuple a s') f
+instance ixMonadTellIxStateT :: IxMonadTell w m => IxMonadTell w (IxStateT s m) where
+  itell = ilift <<< itell
+
+instance ixMonadWriterIxStateT :: IxMonadWriter w m => IxMonadWriter w (IxStateT s m) where
+  ilisten m = IxStateT \s ->
+    case m of
+      IxStateT m' -> Ix.do
+        Tuple (Tuple a s') w <- ilisten (m' s)
+        ipure (Tuple (Tuple a w) s')
+  ipass m = IxStateT \s -> ipass
+    case m of
+      IxStateT m' -> Ix.do
+        Tuple (Tuple a f) s' <- m' s
+        ipure (Tuple (Tuple a s') f)
