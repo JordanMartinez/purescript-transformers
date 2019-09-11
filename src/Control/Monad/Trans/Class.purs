@@ -21,4 +21,4 @@ import Control.Monad.Indexed (class IxMonad, imap)
 -- | - `lift (pure a) = pure a`
 -- | - `lift (do { x <- m ; y }) = do { x <- lift m ; lift y }`
 class IxMonadTrans t where
-  ilift :: forall m x a. IxMonad m => m x x a -> t m x x a
+  ilift :: forall m x y a. IxMonad m => m x y a -> t m x y a
