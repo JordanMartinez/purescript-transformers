@@ -2,8 +2,7 @@
 
 module Control.Monad.Indexed.Trans.Class where
 
-import Prelude (class Monad)
-import Control.Monad.Indexed (class IxMonad, imap)
+import Control.Monad.Indexed (class IxMonad)
 
 -- | The `MonadTrans` type class represents _monad transformers_.
 -- |
