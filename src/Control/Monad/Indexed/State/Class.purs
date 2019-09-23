@@ -2,9 +2,8 @@
 
 module Control.Monad.Indexed.State.Class where
 
-import Data.Indexed (Indexed(..))
-import Control.Monad.Indexed (class IxMonad, imap)
-import Prelude (class Monad, Unit, unit)
+import Control.Monad.Indexed (class IxMonad)
+import Data.Unit (Unit, unit)
 
 import Data.Tuple (Tuple(..))
 

@@ -11,7 +11,7 @@ import Prelude
 -- import Control.Alt (class Alt, (<|>))
 -- import Control.Alternative (class Alternative)
 -- import Control.Apply (lift2)
-import Control.Monad.Indexed.Qualified as Ix
+-- import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Indexed (class IxFunctor, class IxApply, class IxApplicative, class IxBind, class IxMonad, imap, iapply, ipure, ibind)
 import Control.Monad.Indexed.Cont.Class (class IxMonadCont, icallCC)
 import Control.Monad.Indexed.Error.Class (class IxMonadThrow, class IxMonadError, icatchError, ithrowError)
